@@ -1,0 +1,58 @@
+/* styles.css */
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f7ff; /* ページ全体の背景色 */
+  color: #333; /* テキストカラー */
+  margin: 0;
+  padding: 0;
+  margin-left: 20px; /* ページを右にずらす */
+}
+
+h1 {
+  color: #0056b3; /* ヘッダーのテキストカラー */
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: space-between;
+  width: 15%;
+}
+
+#fileInput,
+#assembleButton,
+#downloadLink,
+#dropdown {
+  margin: 10px 0;
+}
+
+button {
+  background-color: #0056b3; /* ボタンの背景色 */
+  color: #fff; /* ボタンのテキストカラー */
+  padding: 10px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px; /* 角丸にする */
+}
+
+button:hover {
+  background-color: #003366; /* ボタンのホバー時の背景色 */
+}
+
+select {
+  padding: 8px;
+}
+
+div {
+  color: #0056b3; /* ディビジョンのテキストカラー */
+}
+
+#downloadLink {
+  display: block;
+  margin-top: 10px;
+  color: #0056b3; /* ダウンロードリンクのテキストカラー */
+}
+
+#downloadLink:hover {
+  text-decoration: underline; /* ダウンロードリンクのホバー時に下線を表示 */
+}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <title>Assembler by WebAssembly</title>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+  </head>
+  <body>
+    <h1>Assembler by WebAssembly</h1>
+    <input type="file" id="fileInput"></input>
+    <div class="buttonContainer">
+      <button id="assembleButton">Assemble</button>
+      <a id="downloadLink" download="out.bin">Download</a>
+    </div>
+    <div>出力形式</div>
+    <select id="dropdown">
+      <option value="2">2進数のテキスト</option>
+      <option value="16">16進数のテキスト</option>
+      <option value="bin">バイナリファイル</option>
+    </select>
+    <script type="module" src="index.js"></script>
+  </body>
+</html>
