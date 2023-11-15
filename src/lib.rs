@@ -55,34 +55,56 @@ fn format_int_register(reg: &String) -> String {
         "s0" | "fp" => format!("{:>05b}", 8),
         "s1" => format!("{:>05b}", 9),
         _ => {
-            assert_ne!(reg.len(), 0);
+            if reg.len() == 0 {
+                return "".to_string();
+            }
             let mut reg = String::from(reg);
             let first: &str = &reg[0..1].to_string();
             reg.remove(0);
             match first {
                 "t" => {
-                    let index = u8::from_str_radix(&reg, 10).unwrap();
-                    if index <= 2 {
-                        format!("{:>05b}", index + 5)
+                    if let Ok(index) = u8::from_str_radix(&reg, 10) {
+                        if index <= 2 {
+                            format!("{:>05b}", index + 5)
+                        } else {
+                            if index < 3 || index > 6 {
+                                return "".to_string();
+                            }
+                            format!("{:>05b}", index + 25)
+                        }
                     } else {
-                        assert!(3 <= index && index <= 6);
-                        format!("{:>05b}", index + 25)
+                        return "".to_string();
                     }
                 }
                 "a" => {
-                    let index = u8::from_str_radix(&reg, 10).unwrap();
-                    assert!(index <= 7);
-                    format!("{:>05b}", index + 10)
+                    if let Ok(index) = u8::from_str_radix(&reg, 10) {
+                        if index > 7 {
+                            return "".to_string();
+                        }
+                        format!("{:>05b}", index + 10)
+                    } else {
+                        return "".to_string();
+                    }
                 }
                 "s" => {
-                    let index = u8::from_str_radix(&reg, 10).unwrap();
-                    assert!(2 <= index && index <= 11);
-                    format!("{:>05b}", index + 16)
+                    if let Ok(index) = u8::from_str_radix(&reg, 10) {
+                        if index < 2 || index > 11 {
+                            return "".to_string();
+                        }
+                        format!("{:>05b}", index + 16)
+                    } else {
+                        return "".to_string();
+                    }
                 }
                 _ => {
-                    let index = u8::from_str_radix(&reg, 10).unwrap();
-                    assert!(index <= 31);
-                    format!("{:>05b}", index)
+                    if let Ok(index) = u8::from_str_radix(&reg, 10) {
+                        if index > 31 {
+                            return "".to_string();
+                        }
+                        format!("{:>05b}", index)
+                    } else {
+                        return "".to_string();
+                    }
                 }
             }
         }
@@ -91,101 +113,145 @@ fn format_int_register(reg: &String) -> String {
 
 fn format_float_register(reg: &String) -> String {
     let reg: &str = &reg.clone();
-    assert!(reg.len() >= 2);
+    if reg.len() < 2 {
+        return "".to_string();
+    }
     let mut reg = String::from(reg);
     let second: &str = &reg[1..2].to_string();
     match second {
         "t" => {
             reg.remove(0);
             reg.remove(1);
-            let index = u8::from_str_radix(&reg, 10).unwrap();
-            if index <= 7 {
-                format!("{:>05b}", index)
+            if let Ok(index) = u8::from_str_radix(&reg, 10) {
+                if index <= 7 {
+                    format!("{:>05b}", index)
+                } else {
+                    if index <= 11 {
+                        format!("{:>05b}", index + 20)
+                    } else {
+                        return "".to_string();
+                    }
+                }
             } else {
-                assert!(8 <= index && index <= 7);
-                format!("{:>05b}", index + 20)
+                return "".to_string();
             }
         }
         "s" => {
             reg.remove(0);
             reg.remove(1);
-            let index = u8::from_str_radix(&reg, 10).unwrap();
-            if index <= 1 {
-                format!("{:>05b}", index + 8)
+            if let Ok(index) = u8::from_str_radix(&reg, 10) {
+                if index <= 1 {
+                    format!("{:>05b}", index + 8)
+                } else {
+                    if index > 11 {
+                        return "".to_string();
+                    }
+                    format!("{:>05b}", index + 16)
+                }
             } else {
-                assert!(2 <= index && index <= 11);
-                format!("{:>05b}", index + 16)
+                return "".to_string();
             }
         }
         "a" => {
             reg.remove(0);
             reg.remove(1);
-            let index = u8::from_str_radix(&reg, 10).unwrap();
-            assert!(index <= 7);
-            format!("{:>05b}", index + 10)
+            if let Ok(index) = u8::from_str_radix(&reg, 10) {
+                if index > 7 {
+                    return "".to_string();
+                }
+                format!("{:>05b}", index + 10)
+            } else {
+                return "".to_string();
+            }
         }
         _ => {
             reg.remove(0);
-            let index = u8::from_str_radix(&reg, 10).unwrap();
-            assert!(index < 31);
-            format!("{:>05b}", index)
+            if let Ok(index) = u8::from_str_radix(&reg, 10) {
+                if index > 31 {
+                    return "".to_string();
+                }
+                format!("{:>05b}", index)
+            } else {
+                return "".to_string();
+            }
         }
     }
 }
 
 fn imm12(value: &String) -> String {
-    let value_i32;
-    if value.len() >= 2 && &value[0..2] == "0x" {
-        value_i32 = i32::from_str_radix(&value[2..], 16).unwrap();
+    if let Ok(value_i32) = {
+        if value.len() >= 2 && &value[0..2] == "0x" {
+            i32::from_str_radix(&value[2..], 16)
+        } else {
+            i32::from_str_radix(value, 10)
+        }
+    } {
+        let formatted = format!("{:>012b}", value_i32);
+        let length = formatted.len();
+        formatted[length - 12..length].to_string()
     } else {
-        value_i32 = i32::from_str_radix(value, 10).unwrap();
+        "".to_string()
     }
-    let formatted = format!("{:>012b}", value_i32);
-    let length = formatted.len();
-    formatted[length - 12..length].to_string()
 }
 
 fn imm20(value: &String) -> String {
-    let value_i32;
-    if value.len() >= 2 && &value[0..2] == "0x" {
-        value_i32 = i32::from_str_radix(&value[2..], 16).unwrap();
+    if let Ok(value_i32) = {
+        if value.len() >= 2 && &value[0..2] == "0x" {
+            i32::from_str_radix(&value[2..], 16)
+        } else {
+            i32::from_str_radix(value, 10)
+        }
+    } {
+        let formatted = format!("{:>020b}", value_i32);
+        let length = formatted.len();
+        formatted[length - 20..length].to_string()
     } else {
-        value_i32 = i32::from_str_radix(value, 10).unwrap();
+        "".to_string()
     }
-    let formatted = format!("{:>020b}", value_i32);
-    let length = formatted.len();
-    formatted[length - 20..length].to_string()
 }
 
 fn uimm5(value: &String) -> String {
-    let value_u32;
-    if value.len() >= 2 && &value[0..2] == "0x" {
-        value_u32 = u32::from_str_radix(&value[2..], 16).unwrap() & 0b11111;
+    if let Ok(value_u32) = {
+        if value.len() >= 2 && &value[0..2] == "0x" {
+            u32::from_str_radix(&value[2..], 16)
+        } else {
+            u32::from_str_radix(value, 10)
+        }
+    } {
+        let value_u32 = value_u32 & 0b11111;
+        let formatted = format!("{:>05b}", value_u32);
+        let length = formatted.len();
+        formatted[length - 5..length].to_string()
     } else {
-        value_u32 = u32::from_str_radix(value, 10).unwrap() & 0b11111;
+        "".to_string()
     }
-    let formatted = format!("{:>05b}", value_u32);
-    let length = formatted.len();
-    formatted[length - 5..length].to_string()
 }
 
 fn upimm20(value: &String) -> String {
-    let value_i32;
-    if value.len() >= 2 && &value[0..2] == "0x" {
-        value_i32 = i32::from_str_radix(&value[2..], 16).unwrap();
+    if let Ok(value_i32) = {
+        if value.len() >= 2 && &value[0..2] == "0x" {
+            i32::from_str_radix(&value[2..], 16)
+        } else {
+            i32::from_str_radix(value, 10)
+        }
+    } {
+        let formatted = format!("{:>020b}", value_i32);
+        let length = formatted.len();
+        formatted[length - 20..length].to_string()
     } else {
-        value_i32 = i32::from_str_radix(value, 10).unwrap();
+        "".to_string()
     }
-    let formatted = format!("{:>020b}", value_i32);
-    let length = formatted.len();
-    formatted[length - 20..length].to_string()
 }
 
 fn rd_imm12rs1(operands: &Vec<String>, funct3: u8) -> String {
-    assert_eq!(operands.len(), 2);
+    if operands.len() != 2 {
+        return "".to_string();
+    }
     let rd = format_int_register(&operands[0]);
     let imm12rs1: Vec<&str> = operands[1].split('(').collect();
-    assert_eq!(imm12rs1.len(), 2);
+    if imm12rs1.len() != 2 {
+        return "".to_string();
+    }
     let imm12 = imm12(&String::from(imm12rs1[0]));
     let mut rs1 = String::from(imm12rs1[1]);
     rs1.pop();
@@ -199,7 +265,9 @@ fn format_rd_imm12rs1(operands: &Vec<String>, funct3: u8, op: u8) -> String {
 }
 
 fn rd_rs1_imm12(operands: &Vec<String>, funct3: u8) -> String {
-    assert_eq!(operands.len(), 3);
+    if operands.len() != 3 {
+        return "".to_string();
+    }
     let rd = format_int_register(&operands[0]);
     let rs1 = format_int_register(&operands[1]);
     let imm12 = imm12(&operands[2]);
@@ -212,7 +280,9 @@ fn format_rd_rs1_imm12(operands: &Vec<String>, funct3: u8, op: u8) -> String {
 }
 
 fn rd_rs1_uimm5(operands: &Vec<String>, funct3: u8, funct7: u8) -> String {
-    assert_eq!(operands.len(), 3);
+    if operands.len() != 3 {
+        return "".to_string();
+    }
     let rd = format_int_register(&operands[0]);
     let rs1 = format_int_register(&operands[1]);
     let uimm5 = uimm5(&operands[2]);
@@ -226,7 +296,9 @@ fn format_rd_rs1_uimm5(operands: &Vec<String>, funct3: u8, funct7: u8, op: u8) -
 }
 
 fn rd_upimm20(operands: &Vec<String>) -> String {
-    assert_eq!(operands.len(), 2);
+    if operands.len() != 2 {
+        return "".to_string();
+    }
     let rd = format_int_register(&operands[0]);
     let upimm20 = upimm20(&operands[1]);
     format!("{}{}", upimm20, rd)
@@ -237,10 +309,14 @@ fn format_rd_upimm20(operands: &Vec<String>, op: u8) -> String {
 }
 
 fn rs2_imm12rs1(operands: &Vec<String>, funct3: u8) -> String {
-    assert_eq!(operands.len(), 2);
+    if operands.len() != 2 {
+        return "".to_string();
+    }
     let rs2 = format_int_register(&operands[0]);
     let imm12rs1: Vec<&str> = operands[1].split('(').collect();
-    assert_eq!(imm12rs1.len(), 2);
+    if imm12rs1.len() != 2 {
+        return "".to_string();
+    }
     let imm12 = imm12(&String::from(imm12rs1[0]));
     let imm12_str: &str = &imm12;
     let imm_11_5 = imm12_str[0..7].to_string();
@@ -257,7 +333,9 @@ fn format_rs2_imm12rs1(operands: &Vec<String>, funct3: u8, op: u8) -> String {
 }
 
 fn rd_rs1_rs2(operands: &Vec<String>, funct3: u8, funct7: u8) -> String {
-    assert_eq!(operands.len(), 3);
+    if operands.len() != 3 {
+        return "".to_string();
+    }
     let rd = format_int_register(&operands[0]);
     let rs1 = format_int_register(&operands[1]);
     let rs2 = format_int_register(&operands[2]);
@@ -276,22 +354,27 @@ fn rs1_rs2_label(
     current_address: usize,
     label_address_map: &HashMap<String, usize>,
 ) -> String {
-    assert_eq!(operands.len(), 3);
+    if operands.len() != 3 {
+        return "".to_string();
+    }
     let rs1 = format_int_register(&operands[0]);
     let rs2 = format_int_register(&operands[1]);
-    let jump_address = *label_address_map.get(&operands[2]).unwrap();
-    let mut jump_offset = jump_address as i32 - current_address as i32;
-    jump_offset >>= 1;
-    let imm12 = imm12(&jump_offset.to_string());
-    let imm_12 = imm12[0..1].to_string();
-    let imm_11 = imm12[1..2].to_string();
-    let imm_10_5 = imm12[2..8].to_string();
-    let imm_4_1 = imm12[8..12].to_string();
-    let funct3 = format!("{:>03b}", funct3);
-    format!(
-        "{}{}{}{}{}{}{}",
-        imm_12, imm_10_5, rs2, rs1, funct3, imm_4_1, imm_11
-    )
+    if let Some(&jump_address) = label_address_map.get(&operands[2]) {
+        let mut jump_offset = jump_address as i32 - current_address as i32;
+        jump_offset >>= 1;
+        let imm12 = imm12(&jump_offset.to_string());
+        let imm_12 = imm12[0..1].to_string();
+        let imm_11 = imm12[1..2].to_string();
+        let imm_10_5 = imm12[2..8].to_string();
+        let imm_4_1 = imm12[8..12].to_string();
+        let funct3 = format!("{:>03b}", funct3);
+        format!(
+            "{}{}{}{}{}{}{}",
+            imm_12, imm_10_5, rs2, rs1, funct3, imm_4_1, imm_11
+        )
+    } else {
+        "".to_string()
+    }
 }
 
 fn format_rs1_rs2_label(
@@ -313,17 +396,22 @@ fn rd_label(
     current_address: usize,
     label_address_map: &HashMap<String, usize>,
 ) -> String {
-    assert_eq!(operands.len(), 2);
+    if operands.len() != 2 {
+        return "".to_string();
+    }
     let rd = format_int_register(&operands[0]);
-    let jump_address = *label_address_map.get(&operands[1]).unwrap();
-    let mut jump_offset = jump_address as i32 - current_address as i32;
-    jump_offset >>= 1;
-    let imm19 = imm20(&jump_offset.to_string());
-    let imm_20 = imm19[0..1].to_string();
-    let imm_19_12 = imm19[1..9].to_string();
-    let imm_11 = imm19[9..10].to_string();
-    let imm_10_1 = imm19[10..20].to_string();
-    format!("{}{}{}{}{}", imm_20, imm_10_1, imm_11, imm_19_12, rd)
+    if let Some(&jump_address) = label_address_map.get(&operands[1]) {
+        let mut jump_offset = jump_address as i32 - current_address as i32;
+        jump_offset >>= 1;
+        let imm19 = imm20(&jump_offset.to_string());
+        let imm_20 = imm19[0..1].to_string();
+        let imm_19_12 = imm19[1..9].to_string();
+        let imm_11 = imm19[9..10].to_string();
+        let imm_10_1 = imm19[10..20].to_string();
+        format!("{}{}{}{}{}", imm_20, imm_10_1, imm_11, imm_19_12, rd)
+    } else {
+        "".to_string()
+    }
 }
 
 fn format_rd_label(
@@ -340,7 +428,9 @@ fn format_rd_label(
 }
 
 fn fd_fs1_fs2_fs3(operands: &Vec<String>, funct2: u8, funct3: u8) -> String {
-    assert_eq!(operands.len(), 4);
+    if operands.len() != 4 {
+        return "".to_string();
+    }
     let fd = format_float_register(&operands[0]);
     let fs1 = format_float_register(&operands[1]);
     let fs2 = format_float_register(&operands[2]);
@@ -355,7 +445,9 @@ fn format_fd_fs1_fs2_fs3(operands: &Vec<String>, funct2: u8, funct3: u8, op: u8)
 }
 
 fn fd_fs1_fs2(operands: &Vec<String>, funct3: u8, funct7: u8) -> String {
-    assert_eq!(operands.len(), 3);
+    if operands.len() != 3 {
+        return "".to_string();
+    }
     let fd = format_float_register(&operands[0]);
     let fs1 = format_float_register(&operands[1]);
     let fs2 = format_float_register(&operands[2]);
@@ -369,7 +461,9 @@ fn format_fd_fs1_fs2(operands: &Vec<String>, funct3: u8, funct7: u8, op: u8) -> 
 }
 
 fn fd_fs1_with_rs2(operands: &Vec<String>, funct3: u8, funct7: u8, rs2: u8) -> String {
-    assert_eq!(operands.len(), 2);
+    if operands.len() != 2 {
+        return "".to_string();
+    }
     let fd = format_float_register(&operands[0]);
     let fs1 = format_float_register(&operands[1]);
     let funct3 = format!("{:>03b}", funct3);
@@ -393,7 +487,9 @@ fn format_fd_fs1_with_rs2(
 }
 
 fn rd_fs1_with_rs2(operands: &Vec<String>, funct3: u8, funct7: u8, rs2: u8) -> String {
-    assert_eq!(operands.len(), 2);
+    if operands.len() != 2 {
+        return "".to_string();
+    }
     let rd = format_int_register(&operands[0]);
     let fs1 = format_float_register(&operands[1]);
     let funct3 = format!("{:>03b}", funct3);
@@ -417,10 +513,14 @@ fn format_rd_fs1_with_rs2(
 }
 
 fn fd_imm12rs1(operands: &Vec<String>, funct3: u8) -> String {
-    assert_eq!(operands.len(), 2);
+    if operands.len() != 2 {
+        return "".to_string();
+    }
     let fd = format_float_register(&operands[0]);
     let imm12rs1: Vec<&str> = operands[1].split('(').collect();
-    assert_eq!(imm12rs1.len(), 2);
+    if imm12rs1.len() != 2 {
+        return "".to_string();
+    }
     let imm12 = imm12(&String::from(imm12rs1[0]));
     let mut rs1 = String::from(imm12rs1[1]);
     rs1.pop();
@@ -434,10 +534,14 @@ fn format_fd_imm12rs1(operands: &Vec<String>, funct3: u8, op: u8) -> String {
 }
 
 fn fs2_imm12rs1(operands: &Vec<String>, funct3: u8) -> String {
-    assert_eq!(operands.len(), 2);
+    if operands.len() != 2 {
+        return "".to_string();
+    }
     let fs2 = format_float_register(&operands[0]);
     let imm12rs1: Vec<&str> = operands[1].split('(').collect();
-    assert_eq!(imm12rs1.len(), 2);
+    if imm12rs1.len() != 2 {
+        return "".to_string();
+    }
     let imm12 = imm12(&String::from(imm12rs1[0]));
     let imm12_str: &str = &imm12;
     let imm_11_5 = imm12_str[0..7].to_string();
@@ -454,7 +558,9 @@ fn format_fs2_imm12rs1(operands: &Vec<String>, funct3: u8, op: u8) -> String {
 }
 
 fn rd(operands: &Vec<String>, funct3: u8) -> String {
-    assert_eq!(operands.len(), 1);
+    if operands.len() != 1 {
+        return "".to_string();
+    }
     let imm = format!("{:>012}", 0);
     let rd = format!("{:>05}", 0);
     let rs1 = format_int_register(&operands[0]);
@@ -472,20 +578,23 @@ fn resolve_load_address_symbol(
     funct3: u8,
     op: u8,
 ) -> String {
-    let (imm, _) = *data_label_address_map.get(&operands[1]).unwrap();
-    let mut first_new_operands = vec![operands[0].clone()];
-    let second_new_operands = vec![
-        operands[0].clone(),
-        format!("{}({})", (imm & 4095), operands[0].clone()),
-    ];
-    if (imm & 4095) & (1 << 11) != 0 {
-        first_new_operands.push(((imm >> 12) + 1).to_string());
+    if let Some(&(imm, _)) = data_label_address_map.get(&operands[1]) {
+        let mut first_new_operands = vec![operands[0].clone()];
+        let second_new_operands = vec![
+            operands[0].clone(),
+            format!("{}({})", (imm & 4095), operands[0].clone()),
+        ];
+        if (imm & 4095) & (1 << 11) != 0 {
+            first_new_operands.push(((imm >> 12) + 1).to_string());
+        } else {
+            first_new_operands.push((imm >> 12).to_string());
+        }
+        let first = format_rd_upimm20(&first_new_operands, 23);
+        let second = format_rd_imm12rs1(&second_new_operands, funct3, op);
+        format!("{}\n{}", first, second)
     } else {
-        first_new_operands.push((imm >> 12).to_string());
+        "".to_string()
     }
-    let first = format_rd_upimm20(&first_new_operands, 23);
-    let second = format_rd_imm12rs1(&second_new_operands, funct3, op);
-    format!("{}\n{}", first, second)
 }
 
 fn resolve_store_address_symbol(
@@ -494,20 +603,23 @@ fn resolve_store_address_symbol(
     funct3: u8,
     op: u8,
 ) -> String {
-    let (imm, _) = *data_label_address_map.get(&operands[1]).unwrap();
-    let mut first_new_operands = vec![operands[2].clone()];
-    let second_new_operands = vec![
-        operands[0].clone(),
-        format!("{}({})", (imm & 4095), operands[2].clone()),
-    ];
-    if (imm & 4095) & (1 << 11) != 0 {
-        first_new_operands.push(((imm >> 12) + 1).to_string());
+    if let Some(&(imm, _)) = data_label_address_map.get(&operands[1]) {
+        let mut first_new_operands = vec![operands[2].clone()];
+        let second_new_operands = vec![
+            operands[0].clone(),
+            format!("{}({})", (imm & 4095), operands[2].clone()),
+        ];
+        if (imm & 4095) & (1 << 11) != 0 {
+            first_new_operands.push(((imm >> 12) + 1).to_string());
+        } else {
+            first_new_operands.push((imm >> 12).to_string());
+        }
+        let first = format_rd_upimm20(&first_new_operands, 23);
+        let second = format_rs2_imm12rs1(&second_new_operands, funct3, op);
+        format!("{}\n{}", first, second)
     } else {
-        first_new_operands.push((imm >> 12).to_string());
+        "".to_string()
     }
-    let first = format_rd_upimm20(&first_new_operands, 23);
-    let second = format_rs2_imm12rs1(&second_new_operands, funct3, op);
-    format!("{}\n{}", first, second)
 }
 
 fn instruction_to_binary(
@@ -520,7 +632,9 @@ fn instruction_to_binary(
     let operands = &inst.operands;
     match name {
         "lb" => {
-            assert_eq!(operands.len(), 2);
+            if operands.len() != 2 {
+                return "".to_string();
+            }
             if operands[1].find('(') == None {
                 resolve_load_address_symbol(data_label_address_map, operands, 0b000, 3)
             } else {
@@ -528,7 +642,9 @@ fn instruction_to_binary(
             }
         }
         "lh" => {
-            assert_eq!(operands.len(), 2);
+            if operands.len() != 2 {
+                return "".to_string();
+            }
             if operands[1].find('(') == None {
                 resolve_load_address_symbol(data_label_address_map, operands, 0b001, 3)
             } else {
@@ -536,7 +652,9 @@ fn instruction_to_binary(
             }
         }
         "lw" => {
-            assert_eq!(operands.len(), 2);
+            if operands.len() != 2 {
+                return "".to_string();
+            }
             if operands[1].find('(') == None {
                 resolve_load_address_symbol(data_label_address_map, operands, 0b010, 3)
             } else {
@@ -641,30 +759,36 @@ fn instruction_to_binary(
             format_rd_rs1_imm12(&new_operands, 0b000, 19)
         }
         "li" => {
-            assert_eq!(operands.len(), 2);
-            let imm;
-            if operands[1].len() >= 2 && &operands[1][0..2] == "0x" {
-                imm = i32::from_str_radix(&operands[1][2..], 16).unwrap();
-            } else {
-                imm = i32::from_str_radix(&operands[1], 10).unwrap();
+            if operands.len() != 2 {
+                return "".to_string();
             }
-            if -2_i32.pow(12 - 1) <= imm && imm <= 2_i32.pow(12 - 1) {
-                let mut new_operands = vec![operands[0].clone()];
-                new_operands.push(String::from("x0"));
-                new_operands.push(operands[1].clone());
-                format_rd_rs1_imm12(&new_operands, 0b000, 19)
-            } else {
-                let mut first_new_operands = vec![operands[0].clone()];
-                let mut second_new_operands = vec![operands[0].clone(), operands[0].clone()];
-                second_new_operands.push((imm & 4095).to_string());
-                if (imm & 4095) & (1 << 11) != 0 {
-                    first_new_operands.push(((imm >> 12) + 1).to_string());
+            if let Ok(imm) = {
+                if operands[1].len() >= 2 && &operands[1][0..2] == "0x" {
+                    i32::from_str_radix(&operands[1][2..], 16)
                 } else {
-                    first_new_operands.push((imm >> 12).to_string());
+                    i32::from_str_radix(&operands[1], 10)
                 }
-                let first = format_rd_upimm20(&first_new_operands, 55);
-                let second = format_rd_rs1_imm12(&second_new_operands, 0b000, 19);
-                format!("{}\n{}", first, second)
+            } {
+                if -2_i32.pow(12 - 1) <= imm && imm <= 2_i32.pow(12 - 1) {
+                    let mut new_operands = vec![operands[0].clone()];
+                    new_operands.push(String::from("x0"));
+                    new_operands.push(operands[1].clone());
+                    format_rd_rs1_imm12(&new_operands, 0b000, 19)
+                } else {
+                    let mut first_new_operands = vec![operands[0].clone()];
+                    let mut second_new_operands = vec![operands[0].clone(), operands[0].clone()];
+                    second_new_operands.push((imm & 4095).to_string());
+                    if (imm & 4095) & (1 << 11) != 0 {
+                        first_new_operands.push(((imm >> 12) + 1).to_string());
+                    } else {
+                        first_new_operands.push((imm >> 12).to_string());
+                    }
+                    let first = format_rd_upimm20(&first_new_operands, 55);
+                    let second = format_rd_rs1_imm12(&second_new_operands, 0b000, 19);
+                    format!("{}\n{}", first, second)
+                }
+            } else {
+                "".to_string()
             }
         }
         "mv" => {
@@ -831,18 +955,21 @@ fn instruction_to_binary(
             format_rd_label(&new_operands, 111, current_address, text_label_address_map)
         }
         "la" => {
-            let (imm, _) = *data_label_address_map.get(&operands[1]).unwrap();
-            let mut first_new_operands = vec![String::from("ra")];
-            let mut second_new_operands = vec![operands[0].clone(), operands[0].clone()];
-            second_new_operands.push((imm & 4095).to_string());
-            if (imm & 4095) & (1 << 11) != 0 {
-                first_new_operands.push(((imm >> 12) + 1).to_string());
+            if let Some(&(imm, _)) = data_label_address_map.get(&operands[1]) {
+                let mut first_new_operands = vec![String::from("ra")];
+                let mut second_new_operands = vec![operands[0].clone(), operands[0].clone()];
+                second_new_operands.push((imm & 4095).to_string());
+                if (imm & 4095) & (1 << 11) != 0 {
+                    first_new_operands.push(((imm >> 12) + 1).to_string());
+                } else {
+                    first_new_operands.push((imm >> 12).to_string());
+                }
+                let first = format_rd_upimm20(&first_new_operands, 23);
+                let second = format_rd_rs1_imm12(&second_new_operands, 0b000, 19);
+                format!("{}\n{}", first, second)
             } else {
-                first_new_operands.push((imm >> 12).to_string());
+                "".to_string()
             }
-            let first = format_rd_upimm20(&first_new_operands, 23);
-            let second = format_rd_rs1_imm12(&second_new_operands, 0b000, 19);
-            format!("{}\n{}", first, second)
         }
         // additional instructions
         "absdiff" => format_rd_rs1_rs2(operands, 0b000, 0b0110000, 51),
@@ -870,22 +997,30 @@ fn line_count_of(inst: Instruction) -> usize {
     let operands = &inst.operands;
     match name {
         "li" => {
-            assert_eq!(operands.len(), 2);
-            let imm;
-            if operands[1].len() >= 2 && &operands[1][0..2] == "0x" {
-                imm = i32::from_str_radix(&operands[1][2..], 16).unwrap();
-            } else {
-                imm = i32::from_str_radix(&operands[1], 10).unwrap();
+            if operands.len() != 2 {
+                return 0;
             }
-            if -2_i32.pow(12 - 1) <= imm && imm <= 2_i32.pow(12 - 1) {
-                1
+            if let Ok(imm) = {
+                if operands[1].len() >= 2 && &operands[1][0..2] == "0x" {
+                    i32::from_str_radix(&operands[1][2..], 16)
+                } else {
+                    i32::from_str_radix(&operands[1], 10)
+                }
+            } {
+                if -2_i32.pow(12 - 1) <= imm && imm <= 2_i32.pow(12 - 1) {
+                    1
+                } else {
+                    2
+                }
             } else {
-                2
+                0
             }
         }
         "la" => 2,
         "lb" | "lh" | "lw" => {
-            assert_eq!(operands.len(), 2);
+            if operands.len() != 2 {
+                return 0;
+            }
             if operands[1].find('(') == None {
                 2
             } else {
@@ -974,15 +1109,19 @@ fn create_data_label_address_value_map(string: &str) -> HashMap<String, (usize, 
             }
             State::FindingVariableValue((name, address)) => {
                 let splited_line = line.split_whitespace().collect::<Vec<&str>>();
-                assert_eq!(splited_line.len(), 2);
-                assert_eq!(splited_line[0], ".long");
+                if splited_line.len() != 2 || splited_line[0] != ".long" {
+                    break;
+                }
                 let mut value_str = splited_line[1].to_string();
                 if value_str.starts_with("0x") {
                     value_str = value_str[2..].to_string();
                 }
-                let value = u32::from_str_radix(&value_str, 16).unwrap();
-                label_address_map.insert(name.clone(), (address, value));
-                state = State::InDataSection;
+                if let Ok(value) = u32::from_str_radix(&value_str, 16) {
+                    label_address_map.insert(name.clone(), (address, value));
+                    state = State::InDataSection;
+                } else {
+                    break;
+                }
             }
         }
     }
@@ -1040,6 +1179,9 @@ pub fn assemble(string: &str, verbose: &str) -> String {
                                 // print(&format!("unexpected instruction: {}", line));
                                 line_count += 1;
                             } else {
+                                if binary.len() != 32 {
+                                    return "".to_string();
+                                }
                                 let num: u32 = u32::from_str_radix(binary, 2).unwrap();
                                 if verbose == "2" {
                                     binary_string.push_str(&format!("{:>032b}\n", num));

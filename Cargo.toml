@@ -1,10 +1,10 @@
 [package]
 name = "assembler-by-wasm"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Rn86222 <rn86222.light0213@gmail.com>"]
 description = "RISC-V assembler by wasm"
 license = "MIT/Apache-2.0"
-repository = "https://github.com/Rn86222/hello-wasm"
+repository = "https://github.com/Rn86222/assembler-by-wasm"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
