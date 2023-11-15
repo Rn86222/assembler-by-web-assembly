@@ -1038,10 +1038,10 @@ fn line_count_of(inst: Instruction) -> usize {
     }
 }
 
-fn create_text_label_address_map(string: &str) -> HashMap<String, usize> {
+fn create_text_label_address_map(string: &str, section_exists: bool) -> HashMap<String, usize> {
     let mut label_address_map: HashMap<String, usize> = HashMap::new();
     let mut line_count = 0;
-    let mut in_text_section = false;
+    let mut in_text_section = !section_exists;
     let lines = string.split('\n').collect::<Vec<&str>>();
     for line in lines {
         let mut line = line.to_string();
@@ -1140,9 +1140,9 @@ fn section_exists(string: &str) -> bool {
 
 #[wasm_bindgen]
 pub fn assemble(string: &str, verbose: &str) -> String {
-    let text_label_address_map = create_text_label_address_map(string);
-    let data_label_address_value_map = create_data_label_address_value_map(string);
     let section_exists = section_exists(string);
+    let text_label_address_map = create_text_label_address_map(string, section_exists);
+    let data_label_address_value_map = create_data_label_address_value_map(string);
 
     let mut line_count = 0;
     let mut in_text_section = !section_exists;
